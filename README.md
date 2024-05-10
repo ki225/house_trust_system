@@ -1,5 +1,5 @@
 # machine_learning
-來用 git ㄅ，try try 看
+想說之後大家都會用到，而且 git 真的蠻重要的，所以就一起來學看看吧，try try ！
 ## 在本地連接遠端 repo
 ### step1. clone repo
 進入你要放這個資料夾的上一層目錄，比方說我想把這個期末專案放在"機器學習概論"底下，我就進入機器學習概論的目錄，執行下列指令把遠端 repo clone 下來
@@ -60,7 +60,7 @@ git push
 ```
 以下是我推推檔案的示範：
 
-<img src="img/git-use/git-push-03.png">
+<img src="img/git-use/git-push-04.png">
 
 ### 推上去之後呢～？
 我這邊會看到你們的 PR(pull request)，審完 code 後會確認 PR，讓你們的更改合進 main 裡面。
@@ -107,8 +107,8 @@ git log
 ```
 <img src="img/git-use/git-log.png">
 
-切過去，阿這個方法適用於切換過去紀錄/branch
+切過去，這個方法適用於切換過去紀錄/branch
 ```
 git checkout <commit編號 / branch名字>
 ```
-如果你們 pull 完發現原本檔案被蓋掉之類的，可以用這招回到之前的紀錄。
+如果你們 pull 完發現原本檔案被蓋掉之類的，可以用這找回到之前的紀錄。
