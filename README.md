@@ -60,7 +60,7 @@ git push
 ```
 以下是我推推檔案的示範：
 
-<img src="img/git-use/git-push-03.png">
+<img src="img/git-use/git-push-04.png">
 
 ### 推上去之後呢～？
 我這邊會看到你們的 PR(pull request)，審完 code 後會確認 PR，讓你們的更改合進 main 裡面。
