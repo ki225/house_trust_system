@@ -71,14 +71,15 @@ git push
 <img src="img/git-use/pr-03.png">
 <img src="img/git-use/pr-04.png">
 
+若沒有顯示 PR，我就會手動建立 PR。
+<img src="img/git-use/pr-06.png">
+
 成功的時候你們就會拿到 PR 鯊鯊啦～
 
 <img src="img/git-use/pr-05.png">
 
 ### 記得 PR 完要跟我說一聲！！
-PR 成功推上去後我不會收到通知，或是點進去 repo 他不會跳出黃色的框框告知有 PR，這時候就需要手動建立 PR，(這部分我還不知道是什麼原因)，但總之大家要跟我說一聲～
-
-<img src="img/git-use/pr-06.png">
+PR 成功推上去後我不會收到通知，所以大家要跟我說一聲～
 
 ## 在開始打 code 前你要做的事
 記得 pull 一下最新檔案，不然你會錯過最近的更新內容
