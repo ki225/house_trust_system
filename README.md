@@ -107,7 +107,7 @@ git log
 ```
 <img src="img/git-use/git-log.png">
 
-切過去，阿這個方法適用於切換過去紀錄/branch
+切過去，這個方法適用於切換過去紀錄/branch
 ```
 git checkout <commit編號 / branch名字>
 ```
