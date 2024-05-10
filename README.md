@@ -111,3 +111,4 @@ git log
 ```
 git checkout <commit編號 / branch名字>
 ```
+如果你們 pull 完發現原本檔案被蓋掉之類的，可以用這招回到之前的紀錄。
