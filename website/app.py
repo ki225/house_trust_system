@@ -1,15 +1,15 @@
-from flask import Flask, request, jsonify
+# import module
+from flask import Flask, request, jsonify, render_template, redirect, url_for
 import pandas as pd 
 import numpy as np
 import joblib
 import os
 from langchain_core.messages import HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
-
 from configparser import ConfigParser
-
 import tensorflow as tf
 from keras.preprocessing import image
+
 
 # Config Parser
 config = ConfigParser()
@@ -20,19 +20,20 @@ os.environ["GOOGLE_API_KEY"] = config["Gemini"]["API_KEY"]
 
 llm = ChatGoogleGenerativeAI(model="gemini-pro")
 
-house_model = joblib.load('collision.pkl')
+house_model = joblib.load('model/collision.pkl')
 
 app = Flask(__name__)
 
+# 圖片上傳限制變數
 UPLOAD_FOLDER = 'uploads/'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 FIXED_FILENAME = 'crack.png'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
 # 載入已訓練的模型
-model_inceptionV3 = tf.keras.models.load_model('Crack_Detection_InceptionV3_model.h5')
-model_X_inceptionV3 = tf.keras.models.load_model('X-shaped_Crack_Detection_InceptionV3_model.h5')
-model_Y_inceptionV3 = tf.keras.models.load_model('Y-shaped_Crack_Detection_InceptionV3_model.h5')
+model_inceptionV3 = tf.keras.models.load_model('model/Crack_Detection_InceptionV3_model.h5')
+model_X_inceptionV3 = tf.keras.models.load_model('model/X-shaped_Crack_Detection_InceptionV3_model.h5')
+model_Y_inceptionV3 = tf.keras.models.load_model('model/Y-shaped_Crack_Detection_InceptionV3_model.h5')
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -74,7 +75,7 @@ def predict_image(img_path):
         
     return reply_image
 
-
+# 裂縫結合大型語言模型
 def reply_image(result):
 
     if result == "這張圖片被判定為有裂縫，且被判定為X型裂縫":
@@ -103,6 +104,7 @@ def reply_image(result):
         result = llm.invoke([message])
         reply = result.content
         
+        
     if result == "這張圖片被判定為有裂縫，且是一般形狀的裂縫":
         result += " ，請告訴使用者判定結果，並且提醒用戶要注意裂縫的位置跟大小，以及其他要注意的事。"
         message = HumanMessage(
@@ -116,6 +118,7 @@ def reply_image(result):
         result = llm.invoke([message])
         reply = result.content
         
+        
     if result == "這張圖片被判定為沒有裂縫":
         result += " ，請告訴使用者判定結果，並且回答像是牆壁沒有損壞，房屋應該是安全之類的話。"
         message = HumanMessage(
@@ -128,11 +131,9 @@ def reply_image(result):
         )
         result = llm.invoke([message])
         reply = result.content
-
-
-@app.route('/')
-def index():
-    return app.send_static_file('index.html')
+    
+    print(reply)
+    return reply
 
 # 處理縣市輸入
 def city_data(s):
@@ -182,7 +183,11 @@ def material_data(s):
             return 4
     return 3
 
-# 右邊bot
+@app.route('/')
+def index():
+    return app.send_static_file('index.html')
+
+# 介面右測bot
 @app.route('/send_message', methods=['POST'])
 def send_message():
     data = request.get_json()
@@ -206,42 +211,44 @@ def send_message():
     reply = result.content
     return jsonify({'reply': reply})
 
-# 左邊表單
+# 介面左測表單
 @app.route('/submit', methods=['POST'])
-def send_info():
-    if request.method == "POST":
-        form_data = request.form
-        # city
-        City_ = 0
-        City_ = city_data(form_data["City"])
-        
+def submit_form():
 
-        # 建材
-        Material_ = 0
-        Material_ = material_data(form_data["Material"])
-        
-        data = [
-            [
-                City_,
-                int(form_data["Fault"]),
-                int(form_data["Soil_Liquefaction"]),
-                int(form_data["Land_Subside"]),
-                Material_,
-                float(form_data["Floor"]),
-            ]
+    # 處理房屋倒塌預測資料
+    city = request.form.get('City')
+    fault = request.form.get('Fault')
+    soil_liquefaction = request.form.get('Soil_Liquefaction')
+    land_subsidence = request.form.get('Land_Subsidence')
+    material = request.form.get('Material')
+    floor = request.form.get('Floor')
+
+    City_ = city_data(city)
+    Material_ = material_data(material)
+    data = [
+        [
+            City_,
+            int(fault),
+            int(soil_liquefaction),
+            int(land_subsidence),
+            Material_,
+            float(floor),
         ]
-        
-        data = np.array(data).reshape(1, -1)
-        result = house_model.predict(data)
+    ]
+    data = np.array(data).reshape(1, -1)
+    result = house_model.predict(data)
+    result_proba = house_model.predict_proba(data)
+    ans = ""
+    if result[0] == 0:
+        ans = "大概不會倒"
+        prediction = f"系統信心 {result_proba[0][0]:.5f}"
 
-        # 預測結果
-        ans = ""
-        if result[0] == 0:
-            ans = "大概不會倒"
-        else:
-            ans = "有可能會倒喔"
+    else:
+        ans = "有可能會倒喔"
+        prediction = f"系統信心 {result_proba[0][1]:.5f}"
 
-    # 圖片處理
+    print(ans)
+    # 處理圖片上傳
     if 'image' not in request.files:
         return 'No file part'
     file = request.files['image']
@@ -249,16 +256,15 @@ def send_info():
     if file.filename == '':
         return 'No selected file'
     if file and allowed_file(file.filename):
-        
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], FIXED_FILENAME)
         file.save(file_path)
-        
-        # 圖片判讀結果
-        result = predict_image(file_path)
-        reply_image(result)
-        
-        return app.send_static_file('index.html')
-    return 'File type not allowed'
-    
+        result_img = predict_image(file_path)
+        reply = reply_image(result_img)
+        return jsonify({'result': ans, 'prediction': prediction, 'image_status': result_img, 'img_reply': reply})
+    return jsonify({'result': ans, 'image_status': 'File type not allowed'})
+ 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+
