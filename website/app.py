@@ -75,6 +75,61 @@ def predict_image(img_path):
     return reply_image
 
 
+def reply_image(result):
+
+    if result == "這張圖片被判定為有裂縫，且被判定為X型裂縫":
+        result += " ，請告訴使用者判定結果，並且提醒用戶有X型裂縫是房屋損壞的警訊，而且如果斜線在「大梁、大柱或是剪力牆上」，危險度就更高，很有可能成為危樓，然後再提醒用戶需要注意甚麼以及該做的措施。"
+        message = HumanMessage(
+            content=[
+                {
+                "type": "text",
+                "text": result,
+                }
+            ]
+        )
+        result = llm.invoke([message])
+        reply = result.content
+        
+    if result == "這張圖片被判定為有裂縫，且被判定為Y型裂縫":
+        result += " ，請告訴使用者判定結果，並且提醒用戶有Y型裂縫是房屋損壞的警訊，而且如果斜線在「大梁、大柱或是剪力牆上」，危險度就更高，很有可能成為危樓，然後再提醒用戶需要注意甚麼以及該做的措施。"
+        message = HumanMessage(
+            content=[
+                {
+                "type": "text",
+                "text": result,
+                }
+            ]
+        )
+        result = llm.invoke([message])
+        reply = result.content
+        
+    if result == "這張圖片被判定為有裂縫，且是一般形狀的裂縫":
+        result += " ，請告訴使用者判定結果，並且提醒用戶要注意裂縫的位置跟大小，以及其他要注意的事。"
+        message = HumanMessage(
+            content=[
+                {
+                "type": "text",
+                "text": result,
+                }
+            ]
+        )
+        result = llm.invoke([message])
+        reply = result.content
+        
+    if result == "這張圖片被判定為沒有裂縫":
+        result += " ，請告訴使用者判定結果，並且回答像是牆壁沒有損壞，房屋應該是安全之類的話。"
+        message = HumanMessage(
+            content=[
+                {
+                "type": "text",
+                "text": result,
+                }
+            ]
+        )
+        result = llm.invoke([message])
+        reply = result.content
+
+
 @app.route('/')
 def index():
     return app.send_static_file('index.html')
@@ -200,6 +255,7 @@ def send_info():
         
         # 圖片判讀結果
         result = predict_image(file_path)
+        reply_image(result)
         
         return app.send_static_file('index.html')
     return 'File type not allowed'
