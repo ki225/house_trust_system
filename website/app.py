@@ -8,6 +8,9 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 
 from configparser import ConfigParser
 
+import tensorflow as tf
+from keras.preprocessing import image
+
 # Config Parser
 config = ConfigParser()
 config.read("config.ini")
@@ -26,8 +29,50 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 FIXED_FILENAME = 'crack.png'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
+# 載入已訓練的模型
+model_inceptionV3 = tf.keras.models.load_model('Crack_Detection_InceptionV3_model.h5')
+model_X_inceptionV3 = tf.keras.models.load_model('X-shaped_Crack_Detection_InceptionV3_model.h5')
+model_Y_inceptionV3 = tf.keras.models.load_model('Y-shaped_Crack_Detection_InceptionV3_model.h5')
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# 圖片辨識
+def predict_image(img_path):
+    
+    # 針對model_inceptionV3、model_X_inceptionV3調整圖片大小為150x150，並讀取處理圖片
+    img = image.load_img(img_path, target_size=(150, 150)) 
+    img_array = image.img_to_array(img)
+    img_array = np.expand_dims(img_array, axis=0)
+    img_array /= 255.0  
+
+    # 預測
+    prediction = model_inceptionV3.predict(img_array)
+    predictionX = model_X_inceptionV3.predict(img_array)
+    
+    # 針對model_Y_inceptionV3調整圖片大小為224x224，並讀取處理圖片
+    img = image.load_img(img_path, target_size=(224, 224))  
+    img_array = image.img_to_array(img)
+    img_array = np.expand_dims(img_array, axis=0)
+    img_array /= 255.0  
+    
+    # 預測
+    predictionY = model_Y_inceptionV3.predict(img_array)
+    
+    reply_image = ''
+    
+    if prediction[0] > 0.5:
+        reply_image += "這張圖片被判定為有裂縫"   
+        if predictionX[0] < 0.5:
+            reply_image += "，且被判定為X型裂縫"
+        elif predictionY[0][0] < 0.5:
+            reply_image += "，且被判定為Y型裂縫"      
+        else:
+            reply_image += "，且是一般形狀的裂縫"
+    else:
+        reply_image += "這張圖片被判定為沒有裂縫"
+        
+    return reply_image
 
 
 @app.route('/')
@@ -152,6 +197,10 @@ def send_info():
         
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], FIXED_FILENAME)
         file.save(file_path)
+        
+        # 圖片判讀結果
+        result = predict_image(file_path)
+        
         return app.send_static_file('index.html')
     return 'File type not allowed'
     
